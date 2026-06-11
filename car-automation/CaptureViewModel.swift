@@ -32,6 +32,11 @@ class CaptureViewModel: ObservableObject {
     @Published var showQualityReport: Bool = false
     @Published var lastCapturedIndex: Int?
     
+    // Offline Cloud Sync Simulation
+    @Published var isSyncing: Bool = false
+    @Published var syncProgress: Double = 0.0
+    @Published var syncMessage: String = ""
+    
     // MARK: - Private Timer
     private var analysisTimer: Timer?
     private var gyroTimer: Timer?
@@ -43,7 +48,13 @@ class CaptureViewModel: ObservableObject {
     
     // MARK: - Initializer
     init() {
-        seedInitialVehicles()
+        if let stored = LocalStorageManager.loadVehicles() {
+            self.vehicles = stored
+            self.selectedVehicle = stored.first
+        } else {
+            seedInitialVehicles()
+            LocalStorageManager.saveVehicles(vehicles)
+        }
         startSimulatingGyroDrift()
     }
     
@@ -108,6 +119,7 @@ class CaptureViewModel: ObservableObject {
             vehicle.guides[index].qualityMetrics = metrics
             // Assign a random mockup visual index for our generated vector illustrations
             vehicle.guides[index].capturedImageIndex = (activeGuide?.capturedImageIndex ?? index) + 1
+            vehicle.guides[index].isSynced = false // Saved locally (offline), needs upload
         }
         
         // Update selected vehicle and list
@@ -115,6 +127,9 @@ class CaptureViewModel: ObservableObject {
         if let vIndex = vehicles.firstIndex(where: { $0.id == vehicle.id }) {
             vehicles[vIndex] = vehicle
         }
+        
+        // Save updated inventory locally
+        LocalStorageManager.saveVehicles(vehicles)
         
         // Close camera and analytics screens
         withAnimation {
@@ -174,6 +189,9 @@ class CaptureViewModel: ObservableObject {
             ]
         )
         vehicles.insert(newVehicle, at: 0)
+        
+        // Save inventory changes to local disk storage
+        LocalStorageManager.saveVehicles(vehicles)
     }
     
     // MARK: - Private Helper Methods
@@ -326,5 +344,62 @@ class CaptureViewModel: ObservableObject {
             }
         }
         return vin
+    }
+    
+    /// Synchronizes all offline captured photos to the cloud server
+    func syncOfflineCaptures() {
+        var unsyncedItems: [(vehicleIndex: Int, guideIndex: Int, name: String)] = []
+        for vIdx in 0..<vehicles.count {
+            for gIdx in 0..<vehicles[vIdx].guides.count {
+                if vehicles[vIdx].guides[gIdx].status == .captured && !vehicles[vIdx].guides[gIdx].isSynced {
+                    unsyncedItems.append((vIdx, gIdx, "\(vehicles[vIdx].year) \(vehicles[vIdx].model) - \(vehicles[vIdx].guides[gIdx].name)"))
+                }
+            }
+        }
+        
+        guard !unsyncedItems.isEmpty else { return }
+        
+        isSyncing = true
+        syncProgress = 0.0
+        syncMessage = "Establishing connection to automotive cloud server..."
+        
+        var itemIndex = 0
+        Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { [weak self] timer in
+            guard let self = self else {
+                timer.invalidate()
+                return
+            }
+            
+            if itemIndex < unsyncedItems.count {
+                let item = unsyncedItems[itemIndex]
+                self.syncMessage = "Uploading: \(item.name)..."
+                
+                withAnimation {
+                    self.syncProgress = Double(itemIndex + 1) / Double(unsyncedItems.count)
+                }
+                
+                // Update local array model state
+                self.vehicles[item.vehicleIndex].guides[item.guideIndex].isSynced = true
+                
+                // Mirror changes on active screen bindings
+                if self.selectedVehicle?.id == self.vehicles[item.vehicleIndex].id {
+                    self.selectedVehicle = self.vehicles[item.vehicleIndex]
+                }
+                
+                itemIndex += 1
+            } else {
+                timer.invalidate()
+                self.syncMessage = "Sync completed! All database records updated."
+                
+                // Save updated array locally
+                LocalStorageManager.saveVehicles(self.vehicles)
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    withAnimation {
+                        self.isSyncing = false
+                    }
+                }
+            }
+        }
     }
 }

@@ -205,14 +205,23 @@ struct GuideGridItemView: View {
                     .lineLimit(1)
                 
                 HStack(spacing: 4) {
-                    // Status Badge
-                    Circle()
-                        .fill(guide.status == .captured ? Color.green : Color.orange)
-                        .frame(width: 6, height: 6)
-                    
-                    Text(guide.status.rawValue)
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(guide.status == .captured ? .green : .orange)
+                    if guide.status == .captured {
+                        Image(systemName: guide.isSynced ? "cloud.checkmark.fill" : "icloud.and.arrow.up.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(guide.isSynced ? .green : .cyan)
+                        
+                        Text(guide.isSynced ? "Synced" : "Offline")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(guide.isSynced ? .green : .cyan)
+                    } else {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 6, height: 6)
+                        
+                        Text(guide.status.rawValue)
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundColor(.orange)
+                    }
                     
                     Spacer()
                     

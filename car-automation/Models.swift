@@ -51,6 +51,34 @@ struct CaptureGuide: Identifiable, Codable, Equatable, Hashable {
     var status: CaptureStatus
     var capturedImageIndex: Int? // Index to generate mock visual in SwiftUI
     var qualityMetrics: QualityMetrics?
+    var isSynced: Bool = true
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, symbolName, status, capturedImageIndex, qualityMetrics, isSynced
+    }
+    
+    init(id: UUID = UUID(), name: String, description: String, symbolName: String, status: CaptureStatus, capturedImageIndex: Int? = nil, qualityMetrics: QualityMetrics? = nil, isSynced: Bool = true) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.symbolName = symbolName
+        self.status = status
+        self.capturedImageIndex = capturedImageIndex
+        self.qualityMetrics = qualityMetrics
+        self.isSynced = isSynced
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        description = try container.decode(String.self, forKey: .description)
+        symbolName = try container.decode(String.self, forKey: .symbolName)
+        status = try container.decode(CaptureStatus.self, forKey: .status)
+        capturedImageIndex = try container.decodeIfPresent(Int.self, forKey: .capturedImageIndex)
+        qualityMetrics = try container.decodeIfPresent(QualityMetrics.self, forKey: .qualityMetrics)
+        isSynced = try container.decodeIfPresent(Bool.self, forKey: .isSynced) ?? true
+    }
 }
 
 /// A vehicle in the dealership inventory that needs merchandising.
@@ -69,6 +97,10 @@ struct Vehicle: Identifiable, Codable, Equatable, Hashable {
     var progress: Double {
         let completed = guides.filter { $0.status == .captured }.count
         return Double(completed) / Double(guides.count)
+    }
+    
+    var hasUnsyncedPhotos: Bool {
+        guides.contains { $0.status == .captured && !$0.isSynced }
     }
     
     var captureStatusText: String {
