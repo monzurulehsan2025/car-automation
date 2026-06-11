@@ -104,10 +104,10 @@ struct DashboardView: View {
                                         .fontWeight(.bold)
                                 }
                                 .font(.caption)
-                                .foregroundColor(.black)
+                                .foregroundColor(.white)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 8)
-                                .background(Color.cyan)
+                                .background(Color.red)
                                 .cornerRadius(10)
                             }
                         }
