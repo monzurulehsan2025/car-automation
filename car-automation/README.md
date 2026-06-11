@@ -53,11 +53,12 @@ The application separates concerns cleanly across three layers:
 ## 📂 Code Layout
 
 *   [Models.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/Models.swift): Data structures.
+*   [LocalStorageManager.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/LocalStorageManager.swift): Disk file database manager utility using JSON serializations.
 *   [CaptureViewModel.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/CaptureViewModel.swift): State machine and background scheduler simulation.
-*   [DashboardView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/DashboardView.swift): Main entry hub displaying dealer analytics.
+*   [DashboardView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/DashboardView.swift): Main entry hub displaying dealer analytics and sync triggers.
 *   [CaptureCameraView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/CaptureCameraView.swift): Interactive camera simulator.
 *   [AIQualityCheckView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/AIQualityCheckView.swift): Core ML progress analyzer overlay.
-*   [VehicleGalleryView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/VehicleGalleryView.swift): Dealer portfolio grids displaying vector wireframes.
+*   [VehicleGalleryView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/VehicleGalleryView.swift): Dealer portfolio grids displaying vector wireframes and sync badges.
 *   [ContentView.swift](file:///Users/monzurulehsan/lab_v2/car-automation/car-automation/ContentView.swift): Directs routing context in dark mode.
 
 ---

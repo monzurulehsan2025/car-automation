@@ -26,10 +26,62 @@ struct DashboardView: View {
         (name: "Alpine Gloss White", hex: "#f1f2f6")
     ]
     
+    private var unsyncedPhotosCount: Int {
+        viewModel.vehicles.reduce(0) { sum, vehicle in
+            sum + vehicle.guides.filter { $0.status == .captured && !$0.isSynced }.count
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    // Sync Banner
+                    if unsyncedPhotosCount > 0 {
+                        HStack {
+                            Image(systemName: "icloud.and.arrow.up.fill")
+                                .font(.title3)
+                                .foregroundColor(.cyan)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Offline Captures Ready")
+                                    .font(.subheadline)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                
+                                Text("\(unsyncedPhotosCount) photos captured offline pending server sync.")
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.6))
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                withAnimation {
+                                    viewModel.syncOfflineCaptures()
+                                }
+                            }) {
+                                Text("Sync Now")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.cyan)
+                                    .cornerRadius(8)
+                            }
+                        }
+                        .padding()
+                        .background(Color.cyan.opacity(0.1))
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.cyan.opacity(0.3), lineWidth: 1.5)
+                        )
+                        .padding(.horizontal)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+                    
                     // Dealership stats card
                     DealershipStatsOverview(vehicles: viewModel.vehicles)
                     
@@ -131,6 +183,78 @@ struct DashboardView: View {
             )) {
                 CaptureCameraView(viewModel: viewModel)
             }
+            .overlay {
+                if viewModel.isSyncing {
+                    SyncProgressOverlay(
+                        progress: viewModel.syncProgress,
+                        message: viewModel.syncMessage
+                    )
+                    .transition(.opacity)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Sync Progress Overlay View
+
+struct SyncProgressOverlay: View {
+    var progress: Double
+    var message: String
+    
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.85)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 24) {
+                ZStack {
+                    Circle()
+                        .stroke(Color.white.opacity(0.08), lineWidth: 6)
+                        .frame(width: 90, height: 90)
+                    
+                    Circle()
+                        .trim(from: 0, to: CGFloat(progress))
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [.cyan, .green]),
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        )
+                        .frame(width: 90, height: 90)
+                        .rotationEffect(.degrees(-90))
+                    
+                    Image(systemName: "icloud.and.arrow.up")
+                        .font(.title)
+                        .foregroundColor(.cyan)
+                }
+                
+                VStack(spacing: 8) {
+                    Text("Syncing Offline Library")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Text(message)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                
+                ProgressView(value: progress)
+                    .progressViewStyle(LinearProgressViewStyle(tint: .cyan))
+                    .frame(width: 200)
+            }
+            .padding(32)
+            .background(Color(hex: "#121214"))
+            .cornerRadius(24)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+            .padding(24)
         }
     }
 }
