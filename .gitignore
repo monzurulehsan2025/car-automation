@@ -1,0 +1,13 @@
+# OS X
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+*.xcworkspace/xcshareddata/SwiftPM/Package.resolved
+
+# Custom build logs
+*.log
